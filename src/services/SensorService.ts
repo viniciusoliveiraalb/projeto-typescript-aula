@@ -1,72 +1,66 @@
-import { read, write } from '../utils/sensorFile.js';
 import { AppError } from '../errors/AppError.js';
 import { appDataSource } from '../database/appDataSource.js';
-import  { Sensor } from '../entities/Sensor.js';
-
+import { Sensor } from '../entities/Sensor.js';
+import Area from '../entities/Area.js';
 
 class SensorService {
-    private fileName = 'sensor.json';
-    private sensorsMemoria: Sensor[] = []
-    private sensorRepository = appDataSource.getRepository(Sensor)
-
+    private sensorRepository = appDataSource.getRepository(Sensor);
+    private areaRepository = appDataSource.getRepository(Area);
 
     public async getAllSensors(): Promise<Sensor[]> {
         return await this.sensorRepository.find();
     }
 
-
-    // Criar uma função que recupera um sensor pelo seu ID
-
-    public async addSensor(body: unknown): Promise<Sensor> {
-
-        const {  nome, serialNumber } = body as Sensor;
-
-        // validations 
-        if(!nome || !serialNumber) {
-            throw new Error("Missing required sensor fields");
+    public async addSensor(data: any): Promise<any> {
+        const sensorExiste = await this.sensorRepository.findOne({ 
+            where: { serialNumber: data.serialNumber } 
+            
+        });
+        
+        if (sensorExiste) {
+            throw new AppError(400, "Sensor com este Serial Number já cadastrado!");
         }
-        const sensorExiste = await this.sensorRepository.findOne({ where: { serialNumber } })
-        if(sensorExiste) {
-            throw new AppError(400, "Sensor já cadastrado!");
-        }
-        const novoSensor = await this.sensorRepository.create({
-            nome,
-            serialNumber
-        })
+        const area = await this.areaRepository.findOne({ 
+            where: { id: data.area_id}
+         })
+
+         if(!area) {
+            throw new AppError(404 ,"Area não foi encontrada!");
+         }
+
+       
+
+        const novoSensor = this.sensorRepository.create({
+        ...data,
+        area: area // Aqui você está passando o objeto completo da área
+         });
         await this.sensorRepository.save(novoSensor);
         return novoSensor;
     }
- 
-    public async updateSensor(id: string, body: Sensor) {
 
-        // Recupera
-        const sensorExiste = await this.sensorRepository.findOneBy({ id })  
+    public async updateSensor(id: string, data: Partial<Sensor>) {
+        const sensorExiste = await this.sensorRepository.findOneBy({ id });
         
-        if(!sensorExiste) {
-            throw new AppError(400, "Sensor não foi encontrado!");
+        if (!sensorExiste) {
+            throw new AppError(404, "Sensor não encontrado!");
         }
 
-        const update = await this.sensorRepository.create(body);
-        const sensorUpdate = await this.sensorRepository.merge(sensorExiste, update);
+        const update = this.sensorRepository.create(data);
+        const sensorUpdate = this.sensorRepository.merge(sensorExiste, update);
 
         await this.sensorRepository.save(sensorUpdate);
         return sensorUpdate;
-
     }
 
     public async deleteSensor(id: string) {
-
-        const sensor = await this.sensorRepository.findOneBy({ id});
+        const sensor = await this.sensorRepository.findOneBy({ id });
 
         if (!sensor) {
-            throw new AppError(400, "Sensor não encontrado");
+            throw new AppError(404, "Sensor não encontrado");
         }
 
         await this.sensorRepository.remove(sensor);
-
-
     }
-
 }
 
 export default SensorService;

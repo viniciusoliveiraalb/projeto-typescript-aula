@@ -10,8 +10,6 @@ export const createPesquisadorSchema = z.object({
         (val) => (val === undefined ? "".toLowerCase() : val),
         z.string().email("Formato de email inválido")
     ),
-
-    // Sem preprocess se for apenas string, mas garanta que o campo chegue no JSON
     senha: z.preprocess(
         (val) => (val === undefined ? "": val),
          z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
