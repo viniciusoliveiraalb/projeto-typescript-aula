@@ -12,10 +12,10 @@ jobs:
         - name: Checkout do Código
           uses: actions/checkout@v4
 
-        - name: Restart Docker
-          run: |
-              sudo /usr/local/bin/docker-restart.sh
-              sleep 10
+        # - name: Restart Docker
+        #   run: |
+        #       sudo /usr/local/bin/docker-restart.sh
+        #       sleep 10
 
         - name: Login no Github Container Registry
           run: |
